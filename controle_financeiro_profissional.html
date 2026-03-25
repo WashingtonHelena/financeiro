@@ -184,7 +184,7 @@
 
       <div class="side-footer">
         <h3>Como este arquivo salva</h3>
-        <p>Esta versão salva no <strong>navegador</strong> usando localStorage. Depois você pode integrar com <strong>Google Sheets + Apps Script</strong> para salvar no Drive.</p>
+        <p>Ele salva no <strong>navegador</strong> e também pode sincronizar com <strong>Google Sheets + Apps Script</strong> para manter backup na nuvem.</p>
       </div>
     </aside>
 
@@ -223,9 +223,23 @@
           </div>
 
           <div class="panel">
-            <h3>Meta de economia</h3>
-            <p class="head">Acompanhe a meta mensal.</p>
+            <h3>Meta em destaque</h3>
+            <p class="head">Veja a evolução da sua principal meta e o plano sugerido.</p>
             <div id="metaPreview"></div>
+          </div>
+        </div>
+
+        <div class="grid inner-grid" style="margin-top:18px">
+          <div class="panel">
+            <h3>Para onde está indo seu dinheiro</h3>
+            <p class="head">Categorias que mais consomem seu orçamento no mês selecionado.</p>
+            <div id="spendingInsights"></div>
+          </div>
+
+          <div class="panel">
+            <h3>Resumo por tipo de gasto</h3>
+            <p class="head">Comparação entre despesas avulsas, fixos e cartão.</p>
+            <div id="expenseBreakdown"></div>
           </div>
         </div>
 
@@ -319,15 +333,23 @@
       <section id="metas" class="section">
         <div class="grid inner-grid">
           <div class="panel">
-            <h3>Definir meta mensal</h3>
-            <p class="head">Cadastre quanto você quer economizar por mês.</p>
+            <h3>Criar meta financeira</h3>
+            <p class="head">Defina um objetivo com prazo e o sistema monta um plano mensal.</p>
             <div class="field">
-              <label>Valor da meta (R$)</label>
-              <input type="number" id="goalInput" min="0" step="0.01" placeholder="Ex.: 500">
+              <label>Nome da meta</label>
+              <input type="text" id="goalNameInput" placeholder="Ex.: Reserva de emergência, viagem, carro">
             </div>
             <div class="field" style="margin-top:12px">
-              <label>Mês da meta</label>
+              <label>Valor alvo (R$)</label>
+              <input type="number" id="goalInput" min="0" step="0.01" placeholder="Ex.: 3000">
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label>Mês limite</label>
               <input type="month" id="goalMonthInput">
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label>Valor já guardado (opcional)</label>
+              <input type="number" id="goalInitialSaved" min="0" step="0.01" placeholder="Ex.: 500">
             </div>
             <div class="field" style="margin-top:12px">
               <label>Observação</label>
@@ -337,10 +359,32 @@
           </div>
 
           <div class="panel">
-            <h3>Metas cadastradas</h3>
-            <p class="head">Acompanhe o progresso por mês.</p>
-            <div id="goalsList"></div>
+            <h3>Registrar aporte na meta</h3>
+            <p class="head">Marque sempre que separar dinheiro para algum objetivo.</p>
+            <div class="field">
+              <label>Meta</label>
+              <select id="goalContributionSelect"></select>
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label>Data do aporte</label>
+              <input type="date" id="goalContributionDate">
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label>Valor do aporte (R$)</label>
+              <input type="number" id="goalContributionAmount" min="0" step="0.01" placeholder="Ex.: 100">
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label>Observação</label>
+              <textarea id="goalContributionObs" placeholder="Ex.: guardei parte do salário, extra, sobra do mês..."></textarea>
+            </div>
+            <button class="btn btn-primary" id="saveContributionBtn" style="margin-top:14px">Registrar aporte</button>
           </div>
+        </div>
+
+        <div class="panel" style="margin-top:18px">
+          <h3>Metas cadastradas</h3>
+          <p class="head">Acompanhe o progresso, o valor faltante e se houve aporte no mês.</p>
+          <div id="goalsList"></div>
         </div>
       </section>
 
@@ -357,8 +401,27 @@
           </div>
 
           <div class="panel">
-            <h3>Gerenciamento</h3>
-            <p class="head">Faça backup ou limpe tudo.</p>
+            <h3>Google Sheets + Apps Script</h3>
+            <p class="head">Cole a URL do seu Web App para sincronizar este controle com a planilha.</p>
+            <div class="field">
+              <label>URL do Web App</label>
+              <input type="url" id="cloudScriptUrl" placeholder="Cole aqui a URL terminada em /exec">
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label style="display:flex;align-items:center;gap:10px">
+                <input type="checkbox" id="autoSyncCheck" style="min-height:auto;width:18px;height:18px">
+                Sincronizar automaticamente a cada alteração
+              </label>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+              <button class="btn btn-primary" id="saveCloudConfigBtn">Salvar URL</button>
+              <button class="btn btn-soft" id="loadCloudBtn">Carregar da nuvem</button>
+              <button class="btn btn-soft" id="syncNowBtn">Sincronizar agora</button>
+            </div>
+            <p class="muted" id="syncStatus" style="margin-top:12px">Sem sincronização ainda.</p>
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:18px 0">
+            <h3 style="margin-top:0">Gerenciamento</h3>
+            <p class="head">Faça backup local ou limpe tudo.</p>
             <div style="display:flex;gap:10px;flex-wrap:wrap">
               <button class="btn btn-soft" id="exportBtn2">Exportar backup</button>
               <button class="btn btn-danger" id="clearAllBtn">Apagar tudo</button>
@@ -483,17 +546,32 @@
       summaryMonthCards: document.getElementById('summaryMonthCards'),
       projectionCards: document.getElementById('projectionCards'),
       metaPreview: document.getElementById('metaPreview'),
+      spendingInsights: document.getElementById('spendingInsights'),
+      expenseBreakdown: document.getElementById('expenseBreakdown'),
+      goalNameInput: document.getElementById('goalNameInput'),
       goalInput: document.getElementById('goalInput'),
       goalMonthInput: document.getElementById('goalMonthInput'),
+      goalInitialSaved: document.getElementById('goalInitialSaved'),
       goalObs: document.getElementById('goalObs'),
+      goalContributionSelect: document.getElementById('goalContributionSelect'),
+      goalContributionDate: document.getElementById('goalContributionDate'),
+      goalContributionAmount: document.getElementById('goalContributionAmount'),
+      goalContributionObs: document.getElementById('goalContributionObs'),
       goalsList: document.getElementById('goalsList'),
       saveGoalBtn: document.getElementById('saveGoalBtn'),
+      saveContributionBtn: document.getElementById('saveContributionBtn'),
       monthlyIncomeInput: document.getElementById('monthlyIncomeInput'),
       saveIncomeBtn: document.getElementById('saveIncomeBtn'),
       exportBtn: document.getElementById('exportBtn'),
       exportBtn2: document.getElementById('exportBtn2'),
       importFile: document.getElementById('importFile'),
       clearAllBtn: document.getElementById('clearAllBtn'),
+      cloudScriptUrl: document.getElementById('cloudScriptUrl'),
+      autoSyncCheck: document.getElementById('autoSyncCheck'),
+      saveCloudConfigBtn: document.getElementById('saveCloudConfigBtn'),
+      loadCloudBtn: document.getElementById('loadCloudBtn'),
+      syncNowBtn: document.getElementById('syncNowBtn'),
+      syncStatus: document.getElementById('syncStatus'),
       entryDate: document.getElementById('entryDate'),
       entryCategory: document.getElementById('entryCategory'),
       entryDescription: document.getElementById('entryDescription'),
@@ -524,10 +602,14 @@
       els.dashboardMonth.value = state.selectedMonth || currentMonth;
       els.filterMonth.value = state.selectedMonth || currentMonth;
       els.goalMonthInput.value = currentMonth;
+      els.goalContributionDate.value = currentDate;
       els.entryDate.value = currentDate;
       els.entryFixedStart.value = currentMonth;
       els.todayLabel.textContent = `Hoje: ${formatDateBR(currentDate)} • Salve receitas, despesas, fixos, parcelas e metas.`;
       els.monthlyIncomeInput.value = state.monthlyIncome || '';
+      els.cloudScriptUrl.value = state.cloud?.scriptUrl || '';
+      els.autoSyncCheck.checked = Boolean(state.cloud?.autoSync);
+      updateSyncStatus(state.cloud?.lastSyncAt ? `Última sincronização: ${formatDateTimeBR(state.cloud.lastSyncAt)}` : 'Sem sincronização ainda.');
       bindEvents();
       updateModeUI();
       renderAll();
@@ -552,10 +634,14 @@
       els.filterType.addEventListener('change', renderHistory);
       els.monthsAhead.addEventListener('change', renderProjections);
       els.saveGoalBtn.addEventListener('click', saveGoal);
+      els.saveContributionBtn.addEventListener('click', saveGoalContribution);
       els.saveIncomeBtn.addEventListener('click', saveMonthlyIncome);
       [els.exportBtn, els.exportBtn2].forEach(btn => btn.addEventListener('click', exportBackup));
       els.importFile.addEventListener('change', importBackup);
       els.clearAllBtn.addEventListener('click', clearAllData);
+      els.saveCloudConfigBtn.addEventListener('click', saveCloudConfig);
+      els.syncNowBtn.addEventListener('click', syncCloudNow);
+      els.loadCloudBtn.addEventListener('click', () => loadCloudState(true));
     }
 
     function switchSection(target){
@@ -639,7 +725,9 @@
       renderHistory();
       renderProjections();
       renderMetaPreview();
+      renderSpendingInsights();
       renderGoals();
+      renderGoalOptions();
     }
 
     function renderKPIs(){
@@ -668,6 +756,8 @@
         <div class="month-card">
           <h4>${formatMonthLabel(month)}</h4>
           <div class="stat-row"><span>Receitas</span><strong>${formatCurrency(summary.income)}</strong></div>
+          <div class="stat-row"><span>Receita fixa mensal</span><strong>${formatCurrency(summary.recurringIncome || 0)}</strong></div>
+          <div class="stat-row"><span>Receitas avulsas</span><strong>${formatCurrency(summary.incomeEntries || 0)}</strong></div>
           <div class="stat-row"><span>Despesas</span><strong>${formatCurrency(summary.expenses)}</strong></div>
           <div class="stat-row"><span>Fixos</span><strong>${formatCurrency(summary.fixed)}</strong></div>
           <div class="stat-row"><span>Cartão</span><strong>${formatCurrency(summary.card)}</strong></div>
@@ -676,7 +766,7 @@
         <div class="month-card">
           <h4>Composição</h4>
           <div class="stat-row"><span>Total saídas</span><strong>${formatCurrency(summary.expenses + summary.fixed + summary.card)}</strong></div>
-          <div class="stat-row"><span>Receita fixa prevista</span><strong>${formatCurrency(state.monthlyIncome || 0)}</strong></div>
+          <div class="stat-row"><span>Receita fixa mensal</span><strong>${formatCurrency(state.monthlyIncome || 0)}</strong></div>
           <div class="stat-row"><span>Lançamentos no mês</span><strong>${summary.itemsCount}</strong></div>
           <div class="stat-row"><span>Comprometido</span><strong>${summary.income > 0 ? Math.min(999, Math.round(((summary.expenses + summary.fixed + summary.card)/summary.income)*100)) : 0}%</strong></div>
         </div>
@@ -748,25 +838,114 @@
       els.projectionCards.innerHTML = cards.join('');
     }
 
-    function renderMetaPreview(){
+
+    function renderSpendingInsights(){
       const month = els.dashboardMonth.value;
-      const goal = state.goals.find(g => g.month === month);
-      const summary = getMonthSummary(month, true);
-      if (!goal) {
-        els.metaPreview.innerHTML = `<div class="meta-box"><strong>Nenhuma meta cadastrada para ${formatMonthLabel(month)}.</strong><p class="muted">Use a aba Metas para cadastrar um valor de economia desejado.</p></div>`;
+      const byCategory = getExpenseCategories(month);
+      if (!byCategory.length) {
+        els.spendingInsights.innerHTML = `<div class="empty">Ainda não há gastos cadastrados neste mês.</div>`;
+      } else {
+        const total = byCategory.reduce((sum, item) => sum + item.value, 0);
+        els.spendingInsights.innerHTML = byCategory.map(item => {
+          const pct = total > 0 ? Math.round((item.value / total) * 100) : 0;
+          return `
+            <div style="margin-bottom:14px">
+              <div class="stat-row"><span>${escapeHtml(item.category)}</span><strong>${formatCurrency(item.value)} • ${pct}%</strong></div>
+              <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      const sum = getMonthSummary(month, true);
+      const totalOut = sum.expenses + sum.fixed + sum.card;
+      const parts = [
+        {label:'Despesas avulsas', value: sum.expenses},
+        {label:'Custos fixos', value: sum.fixed},
+        {label:'Cartão', value: sum.card},
+      ].filter(item => item.value > 0);
+
+      if (!parts.length) {
+        els.expenseBreakdown.innerHTML = `<div class="empty">Sem saídas cadastradas neste mês.</div>`;
         return;
       }
-      const saved = Math.max(0, summary.balance);
-      const progress = goal.value > 0 ? Math.min(100, Math.round((saved / goal.value) * 100)) : 0;
+
+      els.expenseBreakdown.innerHTML = parts.map(item => {
+        const pct = totalOut > 0 ? Math.round((item.value / totalOut) * 100) : 0;
+        return `
+          <div style="margin-bottom:14px">
+            <div class="stat-row"><span>${item.label}</span><strong>${formatCurrency(item.value)} • ${pct}%</strong></div>
+            <div class="progress"><div class="bar" style="width:${pct}%"></div></div>
+          </div>
+        `;
+      }).join('') + `<p class="muted" style="margin-top:10px">Total de saídas em ${formatMonthLabel(month)}: <strong>${formatCurrency(totalOut)}</strong></p>`;
+    }
+
+    function renderMetaPreview(){
+      const dashboardMonth = els.dashboardMonth.value;
+      const goal = getHighlightedGoal(dashboardMonth);
+      if (!goal) {
+        els.metaPreview.innerHTML = `<div class="meta-box"><strong>Nenhuma meta cadastrada ainda.</strong><p class="muted">Crie uma meta na aba Metas e acompanhe seus aportes.</p></div>`;
+        return;
+      }
+      const info = getGoalProgress(goal);
       els.metaPreview.innerHTML = `
         <div class="meta-box">
-          <div class="stat-row"><span>Meta</span><strong>${formatCurrency(goal.value)}</strong></div>
-          <div class="stat-row"><span>Saldo atual/projetado</span><strong class="${summary.balance >= 0 ? 'saldo-pos' : 'saldo-neg'}">${formatCurrency(summary.balance)}</strong></div>
-          <div class="stat-row"><span>Progresso</span><strong>${progress}%</strong></div>
-          <div class="progress"><div class="bar" style="width:${progress}%"></div></div>
+          <div class="stat-row"><span>Meta</span><strong>${escapeHtml(goal.name)}</strong></div>
+          <div class="stat-row"><span>Valor alvo</span><strong>${formatCurrency(goal.targetValue)}</strong></div>
+          <div class="stat-row"><span>Total guardado</span><strong>${formatCurrency(info.savedTotal)}</strong></div>
+          <div class="stat-row"><span>Falta</span><strong class="${info.remaining > 0 ? 'danger-text' : 'success-text'}">${formatCurrency(Math.max(0, info.remaining))}</strong></div>
+          <div class="stat-row"><span>Plano mensal sugerido</span><strong>${formatCurrency(info.monthlyPlan)}</strong></div>
+          <div class="stat-row"><span>Aporte neste mês</span><strong class="${info.contributedThisMonth > 0 ? 'success-text' : 'danger-text'}">${info.contributedThisMonth > 0 ? formatCurrency(info.contributedThisMonth) : 'Ainda não'}</strong></div>
+          <div class="progress"><div class="bar" style="width:${info.progress}%"></div></div>
           <p class="muted" style="margin-top:10px">${escapeHtml(goal.obs || 'Sem observação.')}</p>
         </div>
       `;
+    }
+
+    function saveGoal(){
+      const name = els.goalNameInput.value.trim();
+      const targetMonth = els.goalMonthInput.value;
+      const targetValue = Number(els.goalInput.value || 0);
+      const initialSaved = Number(els.goalInitialSaved.value || 0);
+      const obs = els.goalObs.value.trim();
+      if (!name || !targetMonth || targetValue <= 0) return alert('Preencha nome, prazo e valor da meta.');
+      state.goals.push({
+        id: cryptoRandom(),
+        name,
+        targetMonth,
+        targetValue,
+        initialSaved,
+        obs,
+        createdMonth: toMonthValue(new Date())
+      });
+      saveState();
+      els.goalNameInput.value = '';
+      els.goalInput.value = '';
+      els.goalInitialSaved.value = '';
+      els.goalObs.value = '';
+      renderAll();
+      switchSection('metas');
+    }
+
+    function saveGoalContribution(){
+      const goalId = els.goalContributionSelect.value;
+      const amount = Number(els.goalContributionAmount.value || 0);
+      const date = els.goalContributionDate.value;
+      const obs = els.goalContributionObs.value.trim();
+      if (!goalId) return alert('Selecione uma meta.');
+      if (!date || amount <= 0) return alert('Informe data e valor do aporte.');
+      state.goalContributions.push({
+        id: cryptoRandom(),
+        goalId,
+        amount,
+        date,
+        obs
+      });
+      saveState();
+      els.goalContributionAmount.value = '';
+      els.goalContributionObs.value = '';
+      renderAll();
     }
 
     function saveGoal(){
@@ -784,47 +963,125 @@
       switchSection('metas');
     }
 
+    function renderGoalOptions(){
+      if (!els.goalContributionSelect) return;
+      if (!state.goals.length) {
+        els.goalContributionSelect.innerHTML = '<option value="">Nenhuma meta cadastrada</option>';
+        return;
+      }
+      els.goalContributionSelect.innerHTML = '<option value="">Selecione</option>' + state.goals
+        .slice()
+        .sort((a,b) => a.targetMonth.localeCompare(b.targetMonth))
+        .map(goal => `<option value="${goal.id}">${escapeHtml(goal.name)} • ${formatMonthLabel(goal.targetMonth)}</option>`)
+        .join('');
+    }
+
     function renderGoals(){
       if (!state.goals.length) {
         els.goalsList.innerHTML = `<div class="empty">Nenhuma meta cadastrada.</div>`;
         return;
       }
-      const ordered = [...state.goals].sort((a,b) => a.month.localeCompare(b.month));
+      const ordered = [...state.goals].sort((a,b) => a.targetMonth.localeCompare(b.targetMonth));
       els.goalsList.innerHTML = ordered.map(goal => {
-        const summary = getMonthSummary(goal.month, true);
-        const progress = goal.value > 0 ? Math.min(100, Math.round((Math.max(0, summary.balance) / goal.value) * 100)) : 0;
+        const info = getGoalProgress(goal);
+        const recentContributions = state.goalContributions
+          .filter(item => item.goalId === goal.id)
+          .sort((a,b) => new Date(b.date) - new Date(a.date))
+          .slice(0,3);
+
         return `
-          <div class="meta-box" style="margin-bottom:12px">
-            <div class="stat-row"><strong>${formatMonthLabel(goal.month)}</strong><button class="btn btn-soft" onclick="deleteGoal('${goal.month}')">Excluir</button></div>
-            <div class="stat-row"><span>Meta</span><strong>${formatCurrency(goal.value)}</strong></div>
-            <div class="stat-row"><span>Saldo do mês</span><strong class="${summary.balance >= 0 ? 'saldo-pos' : 'saldo-neg'}">${formatCurrency(summary.balance)}</strong></div>
-            <div class="progress"><div class="bar" style="width:${progress}%"></div></div>
+          <div class="meta-box" style="margin-bottom:14px">
+            <div class="stat-row"><strong>${escapeHtml(goal.name)}</strong><button class="btn btn-soft" onclick="deleteGoal('${goal.id}')">Excluir</button></div>
+            <div class="stat-row"><span>Prazo</span><strong>${formatMonthLabel(goal.targetMonth)}</strong></div>
+            <div class="stat-row"><span>Valor alvo</span><strong>${formatCurrency(goal.targetValue)}</strong></div>
+            <div class="stat-row"><span>Valor inicial</span><strong>${formatCurrency(goal.initialSaved || 0)}</strong></div>
+            <div class="stat-row"><span>Total aportado</span><strong>${formatCurrency(info.contributionsTotal)}</strong></div>
+            <div class="stat-row"><span>Total guardado</span><strong>${formatCurrency(info.savedTotal)}</strong></div>
+            <div class="stat-row"><span>Falta</span><strong class="${info.remaining > 0 ? 'danger-text' : 'success-text'}">${formatCurrency(Math.max(0, info.remaining))}</strong></div>
+            <div class="stat-row"><span>Plano mensal</span><strong>${formatCurrency(info.monthlyPlan)}</strong></div>
+            <div class="stat-row"><span>Status do mês</span><strong class="${info.contributedThisMonth > 0 ? 'success-text' : 'danger-text'}">${info.contributedThisMonth > 0 ? 'Com aporte' : 'Sem aporte neste mês'}</strong></div>
+            <div class="progress"><div class="bar" style="width:${info.progress}%"></div></div>
             <p class="muted" style="margin-top:10px">${escapeHtml(goal.obs || 'Sem observação.')}</p>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(37,99,235,.14)">
+              <div class="stat-row"><span>Últimos aportes</span><span class="muted">${recentContributions.length ? '' : 'Nenhum ainda'}</span></div>
+              ${recentContributions.map(item => `
+                <div class="stat-row"><span>${formatDateBR(item.date)}</span><strong>${formatCurrency(item.amount)}</strong></div>
+              `).join('')}
+            </div>
           </div>
         `;
       }).join('');
     }
 
+
+    function getExpenseCategories(month){
+      const map = new Map();
+      state.entries
+        .filter(e => e.mode === 'despesa' && toMonthValue(e.date) === month)
+        .forEach(item => map.set(item.category, (map.get(item.category) || 0) + Number(item.amount)));
+      state.fixedEntries
+        .filter(f => f.active && isMonthWithinRange(month, f.startMonth, f.endMonth))
+        .forEach(item => map.set(item.category, (map.get(item.category) || 0) + Number(item.amount)));
+      getCardInstallmentsForMonth(month).forEach(item => map.set(item.category, (map.get(item.category) || 0) + Number(item.value)));
+      return [...map.entries()]
+        .map(([category, value]) => ({ category, value: round2(value) }))
+        .sort((a,b) => b.value - a.value)
+        .slice(0, 6);
+    }
+
+    function getHighlightedGoal(referenceMonth){
+      if (!state.goals.length) return null;
+      const ordered = [...state.goals].sort((a,b) => a.targetMonth.localeCompare(b.targetMonth));
+      return ordered.find(goal => getGoalProgress(goal).remaining > 0 && goal.targetMonth >= referenceMonth) || ordered[0];
+    }
+
+    function getGoalProgress(goal){
+      const contributions = state.goalContributions.filter(item => item.goalId === goal.id);
+      const contributionsTotal = contributions.reduce((sum, item) => sum + Number(item.amount), 0);
+      const savedTotal = round2(Number(goal.initialSaved || 0) + contributionsTotal);
+      const remaining = round2(Number(goal.targetValue || 0) - savedTotal);
+      const progress = goal.targetValue > 0 ? Math.min(100, Math.round((savedTotal / goal.targetValue) * 100)) : 0;
+      const monthsRemaining = getMonthsDiffInclusive(toMonthValue(new Date()), goal.targetMonth);
+      const monthlyPlan = remaining > 0 ? round2(remaining / Math.max(1, monthsRemaining)) : 0;
+      const currentMonth = toMonthValue(new Date());
+      const contributedThisMonth = contributions
+        .filter(item => toMonthValue(item.date) === currentMonth)
+        .reduce((sum, item) => sum + Number(item.amount), 0);
+      return { contributionsTotal: round2(contributionsTotal), savedTotal, remaining, progress, monthsRemaining, monthlyPlan, contributedThisMonth: round2(contributedThisMonth) };
+    }
+
     function saveMonthlyIncome(){
       const value = Number(els.monthlyIncomeInput.value || 0);
-      state.monthlyIncome = value;
+      if (value < 0) return alert('Informe um valor válido para a receita fixa mensal.');
+      state.monthlyIncome = round2(value);
       saveState();
       renderAll();
-      alert('Receita fixa mensal salva.');
+      alert('Receita fixa mensal salva. Ela será considerada automaticamente no mês atual e nas projeções futuras.');
     }
 
     function getMonthSummary(month, projected = false){
       const entries = state.entries.filter(e => toMonthValue(e.date) === month);
       const incomeEntries = entries.filter(e => e.mode === 'receita').reduce((s,e) => s + Number(e.amount), 0);
       const expenseEntries = entries.filter(e => e.mode === 'despesa').reduce((s,e) => s + Number(e.amount), 0);
-      const income = projected ? Math.max(state.monthlyIncome || 0, incomeEntries) : incomeEntries;
+      const recurringIncome = Number(state.monthlyIncome || 0);
+      const income = round2(incomeEntries + recurringIncome);
       const fixed = state.fixedEntries
         .filter(f => f.active && isMonthWithinRange(month, f.startMonth, f.endMonth))
         .reduce((s,f) => s + Number(f.amount), 0);
-      const card = getCardInstallmentsForMonth(month).reduce((s,c) => s + Number(c.value), 0);
+      const cardInstallments = getCardInstallmentsForMonth(month);
+      const card = cardInstallments.reduce((s,c) => s + Number(c.value), 0);
       const balance = round2(income - expenseEntries - fixed - card);
-      const itemsCount = entries.length + getCardInstallmentsForMonth(month).length + state.fixedEntries.filter(f => f.active && isMonthWithinRange(month, f.startMonth, f.endMonth)).length;
-      return { income: round2(income), expenses: round2(expenseEntries), fixed: round2(fixed), card: round2(card), balance, itemsCount };
+      const itemsCount = entries.length + cardInstallments.length + state.fixedEntries.filter(f => f.active && isMonthWithinRange(month, f.startMonth, f.endMonth)).length;
+      return {
+        income,
+        recurringIncome: round2(recurringIncome),
+        incomeEntries: round2(incomeEntries),
+        expenses: round2(expenseEntries),
+        fixed: round2(fixed),
+        card: round2(card),
+        balance,
+        itemsCount
+      };
     }
 
     function getCardInstallmentsForMonth(month){
@@ -938,7 +1195,27 @@
     function loadState(){
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        try { return JSON.parse(raw); } catch {}
+        try {
+          const parsed = JSON.parse(raw);
+          parsed.entries = parsed.entries || [];
+          parsed.fixedEntries = parsed.fixedEntries || [];
+          parsed.cardPurchases = parsed.cardPurchases || [];
+          parsed.goalContributions = parsed.goalContributions || [];
+          parsed.cloud = parsed.cloud || { scriptUrl:'', autoSync:false, lastSyncAt:'' };
+          parsed.goals = (parsed.goals || []).map(goal => {
+            if (goal && goal.targetValue !== undefined) return goal;
+            return {
+              id: cryptoRandom(),
+              name: goal.obs || 'Meta financeira',
+              targetMonth: goal.month || toMonthValue(new Date()),
+              targetValue: Number(goal.value || 0),
+              initialSaved: 0,
+              obs: goal.obs || '',
+              createdMonth: toMonthValue(new Date())
+            };
+          });
+          return parsed;
+        } catch {}
       }
       return {
         selectedMonth: toMonthValue(new Date()),
@@ -946,12 +1223,124 @@
         entries: [],
         fixedEntries: [],
         cardPurchases: [],
-        goals: []
+        goals: [],
+        goalContributions: [],
+        cloud: { scriptUrl:'', autoSync:false, lastSyncAt:'' }
       };
     }
 
+    let autoSyncTimer = null;
+
     function saveState(){
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      queueAutoSync();
+    }
+
+
+    function saveCloudConfig(){
+      state.cloud = state.cloud || { scriptUrl:'', autoSync:false, lastSyncAt:'' };
+      state.cloud.scriptUrl = (els.cloudScriptUrl.value || '').trim();
+      state.cloud.autoSync = Boolean(els.autoSyncCheck.checked);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      updateSyncStatus(state.cloud.scriptUrl ? 'URL salva. Use “Carregar da nuvem” ou “Sincronizar agora”.' : 'URL removida. O sistema continuará salvando localmente.');
+      alert(state.cloud.scriptUrl ? 'URL do Apps Script salva.' : 'URL removida.');
+    }
+
+    function queueAutoSync(){
+      if (!state.cloud?.autoSync || !state.cloud?.scriptUrl) return;
+      clearTimeout(autoSyncTimer);
+      autoSyncTimer = setTimeout(() => syncCloudNow(false), 700);
+    }
+
+    function syncCloudNow(showAlert = true){
+      const url = (state.cloud?.scriptUrl || '').trim();
+      if (!url) {
+        if (showAlert) alert('Cole primeiro a URL do Web App do Apps Script.');
+        return;
+      }
+      try {
+        updateSyncStatus('Sincronizando com a nuvem...');
+        postToCloud(url, {
+          action: 'saveState',
+          state,
+          savedAt: new Date().toISOString()
+        });
+        state.cloud.lastSyncAt = new Date().toISOString();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        updateSyncStatus(`Última sincronização: ${formatDateTimeBR(state.cloud.lastSyncAt)}`);
+        if (showAlert) alert('Sincronização enviada para o Google Sheets.');
+      } catch (error) {
+        console.error(error);
+        updateSyncStatus('Falha ao sincronizar.');
+        if (showAlert) alert('Não foi possível sincronizar agora.');
+      }
+    }
+
+    function loadCloudState(showAlert = false){
+      const url = (state.cloud?.scriptUrl || '').trim();
+      if (!url) {
+        alert('Cole primeiro a URL do Web App do Apps Script.');
+        return;
+      }
+      updateSyncStatus('Carregando dados da nuvem...');
+      const callbackName = '__financeiroCloudCallback';
+      window[callbackName] = function(response){
+        try {
+          if (!response || response.ok === false) throw new Error(response?.message || 'Resposta inválida');
+          const incoming = response.state;
+          if (!incoming || typeof incoming !== 'object') throw new Error('Nenhum dado encontrado na nuvem.');
+          incoming.cloud = incoming.cloud || {};
+          incoming.cloud.scriptUrl = state.cloud.scriptUrl;
+          incoming.cloud.autoSync = state.cloud.autoSync;
+          incoming.cloud.lastSyncAt = new Date().toISOString();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(incoming));
+          updateSyncStatus(`Última sincronização: ${formatDateTimeBR(incoming.cloud.lastSyncAt)}`);
+          if (showAlert) alert('Dados carregados da nuvem com sucesso.');
+          location.reload();
+        } catch (error) {
+          console.error(error);
+          updateSyncStatus('Falha ao carregar da nuvem.');
+          if (showAlert) alert(error.message || 'Não foi possível carregar da nuvem.');
+        }
+      };
+
+      const script = document.createElement('script');
+      script.src = `${url}${url.includes('?') ? '&' : '?'}action=getState&callback=${callbackName}&_=${Date.now()}`;
+      script.onerror = () => {
+        updateSyncStatus('Falha ao carregar da nuvem.');
+        if (showAlert) alert('Não foi possível carregar da nuvem.');
+      };
+      document.body.appendChild(script);
+    }
+
+    function postToCloud(url, payload){
+      const iframeName = 'cloudSyncFrame';
+      let iframe = document.querySelector(`iframe[name="${iframeName}"]`);
+      if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.name = iframeName;
+        iframe.style.display = 'none';
+        document.body.appendChild(iframe);
+      }
+
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = url;
+      form.target = iframeName;
+      form.style.display = 'none';
+
+      const input = document.createElement('textarea');
+      input.name = 'payload';
+      input.value = JSON.stringify(payload);
+      form.appendChild(input);
+
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(() => form.remove(), 1500);
+    }
+
+    function updateSyncStatus(message){
+      if (els.syncStatus) els.syncStatus.textContent = message;
     }
 
     function removeItem(collection, id, index){
@@ -969,9 +1358,10 @@
       renderAll();
     }
 
-    function deleteGoal(month){
+    function deleteGoal(goalId){
       if (!confirm('Excluir esta meta?')) return;
-      state.goals = state.goals.filter(g => g.month !== month);
+      state.goals = state.goals.filter(g => g.id !== goalId);
+      state.goalContributions = state.goalContributions.filter(item => item.goalId !== goalId);
       saveState();
       renderAll();
     }
@@ -998,6 +1388,12 @@
       const [y,m] = monthValue.split('-').map(Number);
       const date = new Date(y, m - 1 + amount, 1);
       return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+    }
+
+    function getMonthsDiffInclusive(startMonth, endMonth){
+      const [sy,sm] = startMonth.split('-').map(Number);
+      const [ey,em] = endMonth.split('-').map(Number);
+      return Math.max(1, ((ey - sy) * 12) + (em - sm) + 1);
     }
 
     function setDayInMonth(monthValue, day){
