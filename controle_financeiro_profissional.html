@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle Financeiro Pessoal Pro</title>
+  <style>
+    :root{
+      --bg:#0f172a;
+      --panel:#111827;
+      --panel-2:#1f2937;
+      --card:#ffffff;
+      --soft:#f8fafc;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --line:rgba(148,163,184,.16);
+      --primary:#2563eb;
+      --primary-2:#1d4ed8;
+      --green:#16a34a;
+      --red:#dc2626;
+      --amber:#d97706;
+      --purple:#7c3aed;
+      --cyan:#0891b2;
+      --shadow:0 18px 40px rgba(2,8,23,.22);
+      --radius:20px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(180deg,#0b1220,#111827 28%,#eef2ff 28%,#f8fafc 100%);color:#0f172a}
+    body{min-height:100vh}
+    .app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+
+    .sidebar{
+      background:linear-gradient(180deg,#0f172a,#111827);
+      color:var(--text);
+      padding:26px 18px;
+      position:sticky;top:0;height:100vh;
+      border-right:1px solid rgba(255,255,255,.06);
+    }
+    .brand{
+      display:flex;gap:14px;align-items:center;margin-bottom:28px;
+      padding:14px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:rgba(255,255,255,.03)
+    }
+    .logo{
+      width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--primary),#60a5fa);
+      display:grid;place-items:center;font-weight:800;font-size:22px;color:#fff;box-shadow:var(--shadow)
+    }
+    .brand h1{margin:0;font-size:18px;line-height:1.1}
+    .brand p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
+
+    .nav{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+    .nav button{
+      width:100%;text-align:left;border:0;background:transparent;color:var(--text);padding:14px 16px;border-radius:14px;
+      cursor:pointer;font-size:15px;transition:.2s ease;display:flex;align-items:center;justify-content:space-between
+    }
+    .nav button:hover,.nav button.active{background:rgba(37,99,235,.18);color:#fff}
+    .nav small{color:#94a3b8}
+
+    .side-footer{
+      margin-top:24px;padding:16px;border-radius:18px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06)
+    }
+    .side-footer h3{margin:0 0 8px;font-size:14px;color:#fff}
+    .side-footer p{margin:0;color:#cbd5e1;font-size:12px;line-height:1.5}
+
+    .content{padding:28px}
+    .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;color:#fff;margin-bottom:24px}
+    .topbar h2{margin:0;font-size:28px}
+    .topbar p{margin:6px 0 0;color:#cbd5e1}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+
+    button,select,input,textarea{font:inherit}
+    .btn{
+      border:0;border-radius:14px;padding:12px 16px;cursor:pointer;font-weight:700;transition:.2s ease;
+      display:inline-flex;align-items:center;justify-content:center;gap:10px
+    }
+    .btn-primary{background:linear-gradient(135deg,var(--primary),var(--primary-2));color:#fff;box-shadow:0 14px 24px rgba(37,99,235,.28)}
+    .btn-soft{background:#fff;color:#0f172a;border:1px solid #dbe4f0}
+    .btn-danger{background:var(--red);color:#fff}
+    .btn:hover{transform:translateY(-1px)}
+
+    .grid{display:grid;gap:16px}
+    .cards{grid-template-columns:repeat(5,minmax(180px,1fr));margin-bottom:20px}
+    .card{
+      background:rgba(255,255,255,.96);backdrop-filter:blur(10px);border-radius:var(--radius);padding:18px;border:1px solid #e5e7eb;box-shadow:0 10px 24px rgba(15,23,42,.06)
+    }
+    .kpi-title{font-size:13px;color:#64748b;margin-bottom:10px;font-weight:700}
+    .kpi-value{font-size:28px;font-weight:800;letter-spacing:-.02em}
+    .kpi-sub{font-size:12px;color:#64748b;margin-top:6px}
+
+    .panel{background:#fff;border-radius:24px;padding:20px;border:1px solid #e5e7eb;box-shadow:0 10px 24px rgba(15,23,42,.06)}
+    .panel h3{margin:0 0 4px;font-size:18px}
+    .panel p.head{margin:0 0 16px;color:#64748b;font-size:13px}
+
+    .dashboard-grid{grid-template-columns:1.2fr .8fr;align-items:start}
+    .inner-grid{grid-template-columns:1fr 1fr;gap:16px}
+    .table-wrap{overflow:auto;border:1px solid #eef2f7;border-radius:18px}
+    table{width:100%;border-collapse:collapse;min-width:760px;background:#fff}
+    th,td{padding:14px 12px;border-bottom:1px solid #eef2f7;text-align:left;font-size:14px}
+    th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:#64748b;background:#f8fafc}
+    tr:hover td{background:#fcfdff}
+
+    .badge{display:inline-flex;align-items:center;padding:7px 11px;border-radius:999px;font-size:12px;font-weight:800}
+    .b-receita{background:rgba(22,163,74,.12);color:var(--green)}
+    .b-despesa{background:rgba(220,38,38,.11);color:var(--red)}
+    .b-fixo{background:rgba(8,145,178,.11);color:var(--cyan)}
+    .b-cartao{background:rgba(124,58,237,.12);color:var(--purple)}
+
+    .filters{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+    .field{display:flex;flex-direction:column;gap:7px}
+    .field label{font-size:12px;color:#64748b;font-weight:700}
+    .field input,.field select,.field textarea{
+      border:1px solid #dbe4f0;border-radius:14px;padding:12px 14px;background:#fff;min-height:46px;outline:none;transition:.2s
+    }
+    .field textarea{min-height:90px;resize:vertical}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:#93c5fd;box-shadow:0 0 0 4px rgba(59,130,246,.12)}
+
+    .month-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+    .month-card{padding:18px;border-radius:20px;background:linear-gradient(180deg,#fff,#f8fafc);border:1px solid #e5e7eb}
+    .month-card h4{margin:0 0 10px;font-size:16px}
+    .stat-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:14px}
+    .stat-row span:first-child{color:#64748b}
+    .saldo-pos{color:var(--green);font-weight:800}
+    .saldo-neg{color:var(--red);font-weight:800}
+
+    .meta-box{padding:18px;border-radius:20px;background:linear-gradient(135deg,rgba(37,99,235,.08),rgba(124,58,237,.08));border:1px solid rgba(37,99,235,.16)}
+    .progress{height:14px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:12px}
+    .bar{height:100%;background:linear-gradient(135deg,var(--primary),var(--purple));width:0%}
+    .muted{color:#64748b}
+    .empty{padding:26px;text-align:center;color:#64748b}
+    .danger-text{color:var(--red);font-weight:700}
+    .success-text{color:var(--green);font-weight:700}
+
+    .modal-backdrop{
+      position:fixed;inset:0;background:rgba(15,23,42,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:30
+    }
+    .modal{width:min(860px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:24px;padding:20px;border:1px solid #e5e7eb;box-shadow:var(--shadow)}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+    .modal-header h3{margin:0}
+    .form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    .form-grid .full{grid-column:1/-1}
+
+    .section{display:none}
+    .section.active{display:block}
+
+    .pill-switch{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 18px}
+    .pill-switch button{border:1px solid #dbe4f0;background:#fff;border-radius:999px;padding:11px 14px;cursor:pointer;font-weight:700}
+    .pill-switch button.active{background:#eff6ff;color:#1d4ed8;border-color:#bfdbfe}
+
+    .toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+
+    @media (max-width: 1100px){
+      .cards{grid-template-columns:repeat(2,minmax(180px,1fr))}
+      .dashboard-grid{grid-template-columns:1fr}
+    }
+    @media (max-width: 920px){
+      .app{grid-template-columns:1fr}
+      .sidebar{position:relative;height:auto}
+      .content{padding:18px}
+    }
+    @media (max-width: 700px){
+      .cards,.inner-grid,.form-grid{grid-template-columns:1fr}
+      .topbar h2{font-size:22px}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo">R$</div>
+        <div>
+          <h1>Financeiro Pro</h1>
+          <p>Controle pessoal com metas, fixos e cartão</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-btn active" data-target="dashboard">📊 <span>Dashboard</span></button>
+        <button class="nav-btn" data-target="lancamentos">🧾 <span>Lançamentos</span></button>
+        <button class="nav-btn" data-target="projecoes">📅 <span>Próximos meses</span></button>
+        <button class="nav-btn" data-target="metas">🎯 <span>Metas</span></button>
+        <button class="nav-btn" data-target="config">⚙️ <span>Configurações</span></button>
+      </nav>
+
+      <div class="side-footer">
+        <h3>Como este arquivo salva</h3>
+        <p>Esta versão salva no <strong>navegador</strong> usando localStorage. Depois você pode integrar com <strong>Google Sheets + Apps Script</strong> para salvar no Drive.</p>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div class="topbar">
+        <div>
+          <h2>Controle Financeiro Pessoal</h2>
+          <p id="todayLabel">Organize receitas, despesas, custos fixos, cartão parcelado e metas.</p>
+        </div>
+        <div class="actions">
+          <button class="btn btn-soft" id="exportBtn">Exportar backup</button>
+          <label class="btn btn-soft" for="importFile" style="cursor:pointer">Importar backup</label>
+          <input type="file" id="importFile" accept="application/json" hidden>
+          <button class="btn btn-primary" id="openModalBtn">+ Novo lançamento</button>
+        </div>
+      </div>
+
+      <section id="dashboard" class="section active">
+        <div class="grid cards" id="kpiCards"></div>
+
+        <div class="grid dashboard-grid">
+          <div class="panel">
+            <div class="toolbar">
+              <div>
+                <h3>Resumo do mês</h3>
+                <p class="head">Visão consolidada do mês selecionado.</p>
+              </div>
+              <div class="filters">
+                <div class="field">
+                  <label>Mês</label>
+                  <input type="month" id="dashboardMonth">
+                </div>
+              </div>
+            </div>
+            <div class="month-cards" id="summaryMonthCards"></div>
+          </div>
+
+          <div class="panel">
+            <h3>Meta de economia</h3>
+            <p class="head">Acompanhe a meta mensal.</p>
+            <div id="metaPreview"></div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:18px">
+          <h3>Últimos lançamentos</h3>
+          <p class="head">Receitas, despesas avulsas, fixos e parcelas do cartão.</p>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tipo</th>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Valor</th>
+                  <th>Obs.</th>
+                </tr>
+              </thead>
+              <tbody id="recentTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="lancamentos" class="section">
+        <div class="panel">
+          <div class="toolbar">
+            <div>
+              <h3>Histórico completo</h3>
+              <p class="head">Filtre e acompanhe tudo o que já foi lançado.</p>
+            </div>
+            <div class="filters">
+              <div class="field">
+                <label>Mês</label>
+                <input type="month" id="filterMonth">
+              </div>
+              <div class="field">
+                <label>Tipo</label>
+                <select id="filterType">
+                  <option value="todos">Todos</option>
+                  <option value="receita">Receita</option>
+                  <option value="despesa">Despesa</option>
+                  <option value="fixo">Fixo</option>
+                  <option value="cartao">Cartão</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Tipo</th>
+                  <th>Descrição</th>
+                  <th>Categoria</th>
+                  <th>Valor</th>
+                  <th>Pagamento</th>
+                  <th>Observação</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="historyTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section id="projecoes" class="section">
+        <div class="panel">
+          <div class="toolbar">
+            <div>
+              <h3>Próximos meses</h3>
+              <p class="head">Veja o comprometimento futuro com fixos, parcelas e previsão de saldo.</p>
+            </div>
+            <div class="filters">
+              <div class="field">
+                <label>Quantidade de meses</label>
+                <select id="monthsAhead">
+                  <option value="3">3</option>
+                  <option value="6" selected>6</option>
+                  <option value="12">12</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="month-cards" id="projectionCards"></div>
+        </div>
+      </section>
+
+      <section id="metas" class="section">
+        <div class="grid inner-grid">
+          <div class="panel">
+            <h3>Definir meta mensal</h3>
+            <p class="head">Cadastre quanto você quer economizar por mês.</p>
+            <div class="field">
+              <label>Valor da meta (R$)</label>
+              <input type="number" id="goalInput" min="0" step="0.01" placeholder="Ex.: 500">
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label>Mês da meta</label>
+              <input type="month" id="goalMonthInput">
+            </div>
+            <div class="field" style="margin-top:12px">
+              <label>Observação</label>
+              <textarea id="goalObs" placeholder="Ex.: guardar para emergência, viagem, quitar dívida..."></textarea>
+            </div>
+            <button class="btn btn-primary" id="saveGoalBtn" style="margin-top:14px">Salvar meta</button>
+          </div>
+
+          <div class="panel">
+            <h3>Metas cadastradas</h3>
+            <p class="head">Acompanhe o progresso por mês.</p>
+            <div id="goalsList"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="config" class="section">
+        <div class="grid inner-grid">
+          <div class="panel">
+            <h3>Receita fixa mensal</h3>
+            <p class="head">Use este valor para previsão dos próximos meses.</p>
+            <div class="field">
+              <label>Receita mensal prevista (R$)</label>
+              <input type="number" id="monthlyIncomeInput" min="0" step="0.01" placeholder="Ex.: 3500">
+            </div>
+            <button class="btn btn-primary" id="saveIncomeBtn" style="margin-top:14px">Salvar receita fixa</button>
+          </div>
+
+          <div class="panel">
+            <h3>Gerenciamento</h3>
+            <p class="head">Faça backup ou limpe tudo.</p>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-soft" id="exportBtn2">Exportar backup</button>
+              <button class="btn btn-danger" id="clearAllBtn">Apagar tudo</button>
+            </div>
+            <p class="muted" style="margin-top:12px">Atenção: apagar remove todos os dados salvos neste navegador.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <h3>Novo lançamento</h3>
+          <p class="head" style="margin:4px 0 0">Cadastre receita, despesa, custo fixo ou compra parcelada.</p>
+        </div>
+        <button class="btn btn-soft" id="closeModalBtn">Fechar</button>
+      </div>
+
+      <div class="pill-switch" id="entryTypeSwitch">
+        <button data-mode="receita" class="active">Receita</button>
+        <button data-mode="despesa">Despesa</button>
+        <button data-mode="fixo">Custo fixo</button>
+        <button data-mode="cartao">Cartão parcelado</button>
+      </div>
+
+      <form id="entryForm">
+        <div class="form-grid">
+          <div class="field">
+            <label>Data</label>
+            <input type="date" id="entryDate" required>
+          </div>
+          <div class="field">
+            <label>Categoria</label>
+            <input type="text" id="entryCategory" placeholder="Ex.: Mercado, Salário, Moradia" required>
+          </div>
+
+          <div class="field full">
+            <label>Descrição</label>
+            <input type="text" id="entryDescription" placeholder="Ex.: Compra no mercado, salário, aluguel" required>
+          </div>
+
+          <div class="field">
+            <label>Valor total (R$)</label>
+            <input type="number" id="entryAmount" min="0" step="0.01" required>
+          </div>
+
+          <div class="field" id="paymentField">
+            <label>Forma de pagamento</label>
+            <select id="entryPayment">
+              <option value="pix">PIX</option>
+              <option value="debito">Débito</option>
+              <option value="dinheiro">Dinheiro</option>
+              <option value="boleto">Boleto</option>
+              <option value="cartao_credito">Cartão de crédito</option>
+            </select>
+          </div>
+
+          <div class="field" id="installmentsField" style="display:none">
+            <label>Quantidade de parcelas</label>
+            <input type="number" id="entryInstallments" min="2" step="1" value="2">
+          </div>
+
+          <div class="field" id="cardNameField" style="display:none">
+            <label>Nome do cartão</label>
+            <input type="text" id="entryCardName" placeholder="Ex.: Nubank, Itaú, Inter">
+          </div>
+
+          <div class="field" id="dueDayField" style="display:none">
+            <label>Dia de vencimento</label>
+            <input type="number" id="entryDueDay" min="1" max="31" value="10">
+          </div>
+
+          <div class="field" id="fixedStartField" style="display:none">
+            <label>Início da recorrência</label>
+            <input type="month" id="entryFixedStart">
+          </div>
+
+          <div class="field" id="fixedEndField" style="display:none">
+            <label>Fim da recorrência (opcional)</label>
+            <input type="month" id="entryFixedEnd">
+          </div>
+
+          <div class="field full">
+            <label>Observação</label>
+            <textarea id="entryObs" placeholder="Informação extra"></textarea>
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap">
+          <button type="button" class="btn btn-soft" id="cancelFormBtn">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar lançamento</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'financeiro_pro_v1';
+
+    const state = loadState();
+
+    const els = {
+      todayLabel: document.getElementById('todayLabel'),
+      navBtns: document.querySelectorAll('.nav-btn'),
+      sections: document.querySelectorAll('.section'),
+      openModalBtn: document.getElementById('openModalBtn'),
+      closeModalBtn: document.getElementById('closeModalBtn'),
+      cancelFormBtn: document.getElementById('cancelFormBtn'),
+      modalBackdrop: document.getElementById('modalBackdrop'),
+      entryForm: document.getElementById('entryForm'),
+      entryTypeSwitch: document.getElementById('entryTypeSwitch'),
+      dashboardMonth: document.getElementById('dashboardMonth'),
+      filterMonth: document.getElementById('filterMonth'),
+      filterType: document.getElementById('filterType'),
+      monthsAhead: document.getElementById('monthsAhead'),
+      kpiCards: document.getElementById('kpiCards'),
+      recentTable: document.getElementById('recentTable'),
+      historyTable: document.getElementById('historyTable'),
+      summaryMonthCards: document.getElementById('summaryMonthCards'),
+      projectionCards: document.getElementById('projectionCards'),
+      metaPreview: document.getElementById('metaPreview'),
+      goalInput: document.getElementById('goalInput'),
+      goalMonthInput: document.getElementById('goalMonthInput'),
+      goalObs: document.getElementById('goalObs'),
+      goalsList: document.getElementById('goalsList'),
+      saveGoalBtn: document.getElementById('saveGoalBtn'),
+      monthlyIncomeInput: document.getElementById('monthlyIncomeInput'),
+      saveIncomeBtn: document.getElementById('saveIncomeBtn'),
+      exportBtn: document.getElementById('exportBtn'),
+      exportBtn2: document.getElementById('exportBtn2'),
+      importFile: document.getElementById('importFile'),
+      clearAllBtn: document.getElementById('clearAllBtn'),
+      entryDate: document.getElementById('entryDate'),
+      entryCategory: document.getElementById('entryCategory'),
+      entryDescription: document.getElementById('entryDescription'),
+      entryAmount: document.getElementById('entryAmount'),
+      entryPayment: document.getElementById('entryPayment'),
+      entryInstallments: document.getElementById('entryInstallments'),
+      entryCardName: document.getElementById('entryCardName'),
+      entryDueDay: document.getElementById('entryDueDay'),
+      entryFixedStart: document.getElementById('entryFixedStart'),
+      entryFixedEnd: document.getElementById('entryFixedEnd'),
+      entryObs: document.getElementById('entryObs'),
+      paymentField: document.getElementById('paymentField'),
+      installmentsField: document.getElementById('installmentsField'),
+      cardNameField: document.getElementById('cardNameField'),
+      dueDayField: document.getElementById('dueDayField'),
+      fixedStartField: document.getElementById('fixedStartField'),
+      fixedEndField: document.getElementById('fixedEndField'),
+    };
+
+    let currentMode = 'receita';
+
+    init();
+
+    function init(){
+      const now = new Date();
+      const currentMonth = toMonthValue(now);
+      const currentDate = toDateValue(now);
+      els.dashboardMonth.value = state.selectedMonth || currentMonth;
+      els.filterMonth.value = state.selectedMonth || currentMonth;
+      els.goalMonthInput.value = currentMonth;
+      els.entryDate.value = currentDate;
+      els.entryFixedStart.value = currentMonth;
+      els.todayLabel.textContent = `Hoje: ${formatDateBR(currentDate)} • Salve receitas, despesas, fixos, parcelas e metas.`;
+      els.monthlyIncomeInput.value = state.monthlyIncome || '';
+      bindEvents();
+      updateModeUI();
+      renderAll();
+    }
+
+    function bindEvents(){
+      els.navBtns.forEach(btn => btn.addEventListener('click', () => switchSection(btn.dataset.target)));
+      els.openModalBtn.addEventListener('click', openModal);
+      els.closeModalBtn.addEventListener('click', closeModal);
+      els.cancelFormBtn.addEventListener('click', closeModal);
+      els.modalBackdrop.addEventListener('click', (e) => { if (e.target === els.modalBackdrop) closeModal(); });
+      els.entryTypeSwitch.querySelectorAll('button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          currentMode = btn.dataset.mode;
+          els.entryTypeSwitch.querySelectorAll('button').forEach(b => b.classList.toggle('active', b === btn));
+          updateModeUI();
+        });
+      });
+      els.entryForm.addEventListener('submit', handleFormSubmit);
+      els.dashboardMonth.addEventListener('change', () => { state.selectedMonth = els.dashboardMonth.value; saveState(); renderAll(); });
+      els.filterMonth.addEventListener('change', renderHistory);
+      els.filterType.addEventListener('change', renderHistory);
+      els.monthsAhead.addEventListener('change', renderProjections);
+      els.saveGoalBtn.addEventListener('click', saveGoal);
+      els.saveIncomeBtn.addEventListener('click', saveMonthlyIncome);
+      [els.exportBtn, els.exportBtn2].forEach(btn => btn.addEventListener('click', exportBackup));
+      els.importFile.addEventListener('change', importBackup);
+      els.clearAllBtn.addEventListener('click', clearAllData);
+    }
+
+    function switchSection(target){
+      els.navBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.target === target));
+      els.sections.forEach(sec => sec.classList.toggle('active', sec.id === target));
+    }
+
+    function openModal(){ els.modalBackdrop.style.display = 'flex'; }
+    function closeModal(){ els.modalBackdrop.style.display = 'none'; }
+
+    function updateModeUI(){
+      const isCard = currentMode === 'cartao';
+      const isFixed = currentMode === 'fixo';
+      const isIncome = currentMode === 'receita';
+      els.paymentField.style.display = isFixed ? 'none' : 'flex';
+      els.installmentsField.style.display = isCard ? 'flex' : 'none';
+      els.cardNameField.style.display = isCard ? 'flex' : 'none';
+      els.dueDayField.style.display = isCard ? 'flex' : 'none';
+      els.fixedStartField.style.display = isFixed ? 'flex' : 'none';
+      els.fixedEndField.style.display = isFixed ? 'flex' : 'none';
+      if (isIncome) els.entryPayment.value = 'pix';
+      if (isCard) els.entryPayment.value = 'cartao_credito';
+    }
+
+    function handleFormSubmit(e){
+      e.preventDefault();
+      const amount = Number(els.entryAmount.value || 0);
+      if (!amount || amount <= 0) return alert('Informe um valor válido.');
+
+      const base = {
+        id: cryptoRandom(),
+        mode: currentMode,
+        date: els.entryDate.value,
+        category: els.entryCategory.value.trim(),
+        description: els.entryDescription.value.trim(),
+        amount,
+        payment: currentMode === 'fixo' ? 'recorrente' : els.entryPayment.value,
+        obs: els.entryObs.value.trim(),
+        createdAt: new Date().toISOString()
+      };
+
+      if (!base.date || !base.category || !base.description) return alert('Preencha os campos obrigatórios.');
+
+      if (currentMode === 'receita' || currentMode === 'despesa') {
+        state.entries.push(base);
+      } else if (currentMode === 'fixo') {
+        state.fixedEntries.push({
+          ...base,
+          startMonth: els.entryFixedStart.value || toMonthValue(new Date()),
+          endMonth: els.entryFixedEnd.value || '',
+          active: true
+        });
+      } else if (currentMode === 'cartao') {
+        const installments = Number(els.entryInstallments.value || 0);
+        if (installments < 2) return alert('Para cartão parcelado, informe pelo menos 2 parcelas.');
+        const perInstallment = round2(amount / installments);
+        state.cardPurchases.push({
+          ...base,
+          installments,
+          cardName: els.entryCardName.value.trim() || 'Cartão',
+          dueDay: Number(els.entryDueDay.value || 10),
+          installmentValue: perInstallment
+        });
+      }
+
+      saveState();
+      e.target.reset();
+      els.entryDate.value = toDateValue(new Date());
+      els.entryFixedStart.value = toMonthValue(new Date());
+      currentMode = 'receita';
+      els.entryTypeSwitch.querySelectorAll('button').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === 'receita'));
+      updateModeUI();
+      closeModal();
+      renderAll();
+    }
+
+    function renderAll(){
+      renderKPIs();
+      renderDashboardSummary();
+      renderRecent();
+      renderHistory();
+      renderProjections();
+      renderMetaPreview();
+      renderGoals();
+    }
+
+    function renderKPIs(){
+      const month = els.dashboardMonth.value;
+      const summary = getMonthSummary(month);
+      const cards = [
+        { title:'Receitas do mês', value: formatCurrency(summary.income), sub:'Entradas cadastradas', cls:'success-text' },
+        { title:'Despesas do mês', value: formatCurrency(summary.expenses), sub:'Despesas avulsas', cls:'danger-text' },
+        { title:'Custos fixos', value: formatCurrency(summary.fixed), sub:'Recorrências ativas', cls:'' },
+        { title:'Cartão no mês', value: formatCurrency(summary.card), sub:'Parcelas previstas', cls:'' },
+        { title:'Saldo final', value: formatCurrency(summary.balance), sub: summary.balance >= 0 ? 'Situação positiva' : 'Atenção ao orçamento', cls: summary.balance >= 0 ? 'success-text' : 'danger-text' },
+      ];
+      els.kpiCards.innerHTML = cards.map(card => `
+        <div class="card">
+          <div class="kpi-title">${card.title}</div>
+          <div class="kpi-value ${card.cls}">${card.value}</div>
+          <div class="kpi-sub">${card.sub}</div>
+        </div>
+      `).join('');
+    }
+
+    function renderDashboardSummary(){
+      const month = els.dashboardMonth.value;
+      const summary = getMonthSummary(month);
+      els.summaryMonthCards.innerHTML = `
+        <div class="month-card">
+          <h4>${formatMonthLabel(month)}</h4>
+          <div class="stat-row"><span>Receitas</span><strong>${formatCurrency(summary.income)}</strong></div>
+          <div class="stat-row"><span>Despesas</span><strong>${formatCurrency(summary.expenses)}</strong></div>
+          <div class="stat-row"><span>Fixos</span><strong>${formatCurrency(summary.fixed)}</strong></div>
+          <div class="stat-row"><span>Cartão</span><strong>${formatCurrency(summary.card)}</strong></div>
+          <div class="stat-row"><span>Saldo</span><strong class="${summary.balance >= 0 ? 'saldo-pos' : 'saldo-neg'}">${formatCurrency(summary.balance)}</strong></div>
+        </div>
+        <div class="month-card">
+          <h4>Composição</h4>
+          <div class="stat-row"><span>Total saídas</span><strong>${formatCurrency(summary.expenses + summary.fixed + summary.card)}</strong></div>
+          <div class="stat-row"><span>Receita fixa prevista</span><strong>${formatCurrency(state.monthlyIncome || 0)}</strong></div>
+          <div class="stat-row"><span>Lançamentos no mês</span><strong>${summary.itemsCount}</strong></div>
+          <div class="stat-row"><span>Comprometido</span><strong>${summary.income > 0 ? Math.min(999, Math.round(((summary.expenses + summary.fixed + summary.card)/summary.income)*100)) : 0}%</strong></div>
+        </div>
+      `;
+    }
+
+    function renderRecent(){
+      const items = getUnifiedTimeline().slice(0, 8);
+      if (!items.length) {
+        els.recentTable.innerHTML = `<tr><td colspan="6" class="empty">Nenhum lançamento ainda.</td></tr>`;
+        return;
+      }
+      els.recentTable.innerHTML = items.map(item => `
+        <tr>
+          <td>${formatDateBR(item.date)}</td>
+          <td>${badge(item.type)}</td>
+          <td>${escapeHtml(item.description)}</td>
+          <td>${escapeHtml(item.category)}</td>
+          <td>${formatCurrency(item.value)}</td>
+          <td>${escapeHtml(item.obs || '-')}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderHistory(){
+      const month = els.filterMonth.value;
+      const type = els.filterType.value;
+      let items = getUnifiedTimeline();
+      if (month) items = items.filter(item => item.monthRef === month);
+      if (type !== 'todos') items = items.filter(item => item.type === type);
+
+      if (!items.length) {
+        els.historyTable.innerHTML = `<tr><td colspan="8" class="empty">Nenhum item encontrado para esse filtro.</td></tr>`;
+        return;
+      }
+
+      els.historyTable.innerHTML = items.map(item => `
+        <tr>
+          <td>${formatDateBR(item.date)}</td>
+          <td>${badge(item.type)}</td>
+          <td>${escapeHtml(item.description)}</td>
+          <td>${escapeHtml(item.category)}</td>
+          <td>${formatCurrency(item.value)}</td>
+          <td>${escapeHtml(item.payment || '-')}</td>
+          <td>${escapeHtml(item.obs || '-')}</td>
+          <td><button class="btn btn-soft" onclick="removeItem('${item.collection}','${item.id}',${item.index ?? -1})">Excluir</button></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderProjections(){
+      const months = Number(els.monthsAhead.value || 6);
+      const start = els.dashboardMonth.value || toMonthValue(new Date());
+      const cards = [];
+      for (let i = 0; i < months; i++) {
+        const month = addMonths(start, i);
+        const sum = getMonthSummary(month, true);
+        cards.push(`
+          <div class="month-card">
+            <h4>${formatMonthLabel(month)}</h4>
+            <div class="stat-row"><span>Receita prevista</span><strong>${formatCurrency(sum.income)}</strong></div>
+            <div class="stat-row"><span>Despesas</span><strong>${formatCurrency(sum.expenses)}</strong></div>
+            <div class="stat-row"><span>Fixos</span><strong>${formatCurrency(sum.fixed)}</strong></div>
+            <div class="stat-row"><span>Cartão</span><strong>${formatCurrency(sum.card)}</strong></div>
+            <div class="stat-row"><span>Saldo previsto</span><strong class="${sum.balance >= 0 ? 'saldo-pos' : 'saldo-neg'}">${formatCurrency(sum.balance)}</strong></div>
+          </div>
+        `);
+      }
+      els.projectionCards.innerHTML = cards.join('');
+    }
+
+    function renderMetaPreview(){
+      const month = els.dashboardMonth.value;
+      const goal = state.goals.find(g => g.month === month);
+      const summary = getMonthSummary(month, true);
+      if (!goal) {
+        els.metaPreview.innerHTML = `<div class="meta-box"><strong>Nenhuma meta cadastrada para ${formatMonthLabel(month)}.</strong><p class="muted">Use a aba Metas para cadastrar um valor de economia desejado.</p></div>`;
+        return;
+      }
+      const saved = Math.max(0, summary.balance);
+      const progress = goal.value > 0 ? Math.min(100, Math.round((saved / goal.value) * 100)) : 0;
+      els.metaPreview.innerHTML = `
+        <div class="meta-box">
+          <div class="stat-row"><span>Meta</span><strong>${formatCurrency(goal.value)}</strong></div>
+          <div class="stat-row"><span>Saldo atual/projetado</span><strong class="${summary.balance >= 0 ? 'saldo-pos' : 'saldo-neg'}">${formatCurrency(summary.balance)}</strong></div>
+          <div class="stat-row"><span>Progresso</span><strong>${progress}%</strong></div>
+          <div class="progress"><div class="bar" style="width:${progress}%"></div></div>
+          <p class="muted" style="margin-top:10px">${escapeHtml(goal.obs || 'Sem observação.')}</p>
+        </div>
+      `;
+    }
+
+    function saveGoal(){
+      const month = els.goalMonthInput.value;
+      const value = Number(els.goalInput.value || 0);
+      const obs = els.goalObs.value.trim();
+      if (!month || value <= 0) return alert('Preencha mês e valor da meta.');
+      const idx = state.goals.findIndex(g => g.month === month);
+      const goal = { month, value, obs };
+      if (idx >= 0) state.goals[idx] = goal; else state.goals.push(goal);
+      saveState();
+      els.goalInput.value = '';
+      els.goalObs.value = '';
+      renderAll();
+      switchSection('metas');
+    }
+
+    function renderGoals(){
+      if (!state.goals.length) {
+        els.goalsList.innerHTML = `<div class="empty">Nenhuma meta cadastrada.</div>`;
+        return;
+      }
+      const ordered = [...state.goals].sort((a,b) => a.month.localeCompare(b.month));
+      els.goalsList.innerHTML = ordered.map(goal => {
+        const summary = getMonthSummary(goal.month, true);
+        const progress = goal.value > 0 ? Math.min(100, Math.round((Math.max(0, summary.balance) / goal.value) * 100)) : 0;
+        return `
+          <div class="meta-box" style="margin-bottom:12px">
+            <div class="stat-row"><strong>${formatMonthLabel(goal.month)}</strong><button class="btn btn-soft" onclick="deleteGoal('${goal.month}')">Excluir</button></div>
+            <div class="stat-row"><span>Meta</span><strong>${formatCurrency(goal.value)}</strong></div>
+            <div class="stat-row"><span>Saldo do mês</span><strong class="${summary.balance >= 0 ? 'saldo-pos' : 'saldo-neg'}">${formatCurrency(summary.balance)}</strong></div>
+            <div class="progress"><div class="bar" style="width:${progress}%"></div></div>
+            <p class="muted" style="margin-top:10px">${escapeHtml(goal.obs || 'Sem observação.')}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function saveMonthlyIncome(){
+      const value = Number(els.monthlyIncomeInput.value || 0);
+      state.monthlyIncome = value;
+      saveState();
+      renderAll();
+      alert('Receita fixa mensal salva.');
+    }
+
+    function getMonthSummary(month, projected = false){
+      const entries = state.entries.filter(e => toMonthValue(e.date) === month);
+      const incomeEntries = entries.filter(e => e.mode === 'receita').reduce((s,e) => s + Number(e.amount), 0);
+      const expenseEntries = entries.filter(e => e.mode === 'despesa').reduce((s,e) => s + Number(e.amount), 0);
+      const income = projected ? Math.max(state.monthlyIncome || 0, incomeEntries) : incomeEntries;
+      const fixed = state.fixedEntries
+        .filter(f => f.active && isMonthWithinRange(month, f.startMonth, f.endMonth))
+        .reduce((s,f) => s + Number(f.amount), 0);
+      const card = getCardInstallmentsForMonth(month).reduce((s,c) => s + Number(c.value), 0);
+      const balance = round2(income - expenseEntries - fixed - card);
+      const itemsCount = entries.length + getCardInstallmentsForMonth(month).length + state.fixedEntries.filter(f => f.active && isMonthWithinRange(month, f.startMonth, f.endMonth)).length;
+      return { income: round2(income), expenses: round2(expenseEntries), fixed: round2(fixed), card: round2(card), balance, itemsCount };
+    }
+
+    function getCardInstallmentsForMonth(month){
+      const installments = [];
+      state.cardPurchases.forEach(purchase => {
+        const firstMonth = toMonthValue(purchase.date);
+        for (let i = 0; i < purchase.installments; i++) {
+          const currentMonth = addMonths(firstMonth, i);
+          if (currentMonth === month) {
+            installments.push({
+              id: purchase.id + '_' + (i+1),
+              purchaseId: purchase.id,
+              date: setDayInMonth(currentMonth, purchase.dueDay || 10),
+              description: `${purchase.description} (${i+1}/${purchase.installments})`,
+              category: purchase.category,
+              value: Number(purchase.installmentValue),
+              payment: purchase.cardName || 'Cartão',
+              obs: purchase.obs,
+              type: 'cartao',
+              monthRef: currentMonth,
+              collection: 'cardPurchases',
+              index: state.cardPurchases.findIndex(p => p.id === purchase.id)
+            });
+          }
+        }
+      });
+      return installments;
+    }
+
+    function getUnifiedTimeline(){
+      const baseEntries = state.entries.map((e, index) => ({
+        id: e.id,
+        date: e.date,
+        description: e.description,
+        category: e.category,
+        value: Number(e.amount),
+        payment: e.payment,
+        obs: e.obs,
+        type: e.mode,
+        monthRef: toMonthValue(e.date),
+        collection: 'entries',
+        index
+      }));
+
+      const fixedEntriesExpanded = [];
+      const start = addMonths(toMonthValue(new Date()), -3);
+      for (let i = 0; i < 18; i++) {
+        const month = addMonths(start, i);
+        state.fixedEntries.forEach((f, index) => {
+          if (f.active && isMonthWithinRange(month, f.startMonth, f.endMonth)) {
+            fixedEntriesExpanded.push({
+              id: f.id + '_' + month,
+              date: setDayInMonth(month, dayFromDate(f.date) || 1),
+              description: f.description,
+              category: f.category,
+              value: Number(f.amount),
+              payment: 'recorrente',
+              obs: f.obs,
+              type: 'fixo',
+              monthRef: month,
+              collection: 'fixedEntries',
+              index
+            });
+          }
+        });
+      }
+
+      const allCardInstallments = [];
+      state.cardPurchases.forEach(() => {});
+      const startMonth = addMonths(toMonthValue(new Date()), -3);
+      for (let i = 0; i < 18; i++) {
+        allCardInstallments.push(...getCardInstallmentsForMonth(addMonths(startMonth, i)));
+      }
+
+      return [...baseEntries, ...fixedEntriesExpanded, ...allCardInstallments].sort((a,b) => new Date(b.date) - new Date(a.date));
+    }
+
+    function exportBackup(){
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `financeiro-backup-${toDateValue(new Date())}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importBackup(event){
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          if (!parsed || typeof parsed !== 'object') throw new Error('Arquivo inválido');
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+          location.reload();
+        } catch {
+          alert('Não foi possível importar o arquivo.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function clearAllData(){
+      if (!confirm('Tem certeza que deseja apagar tudo?')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+
+    function loadState(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        try { return JSON.parse(raw); } catch {}
+      }
+      return {
+        selectedMonth: toMonthValue(new Date()),
+        monthlyIncome: 0,
+        entries: [],
+        fixedEntries: [],
+        cardPurchases: [],
+        goals: []
+      };
+    }
+
+    function saveState(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function removeItem(collection, id, index){
+      if (!confirm('Deseja excluir este item?')) return;
+      if (collection === 'entries') {
+        state.entries = state.entries.filter(item => item.id !== id);
+      } else if (collection === 'fixedEntries') {
+        const actualId = id.split('_')[0];
+        state.fixedEntries = state.fixedEntries.filter(item => item.id !== actualId);
+      } else if (collection === 'cardPurchases') {
+        const actualId = id.includes('_') ? id.split('_')[0] : id;
+        state.cardPurchases = state.cardPurchases.filter(item => item.id !== actualId);
+      }
+      saveState();
+      renderAll();
+    }
+
+    function deleteGoal(month){
+      if (!confirm('Excluir esta meta?')) return;
+      state.goals = state.goals.filter(g => g.month !== month);
+      saveState();
+      renderAll();
+    }
+
+    function badge(type){
+      const map = {
+        receita:['Receita','b-receita'],
+        despesa:['Despesa','b-despesa'],
+        fixo:['Fixo','b-fixo'],
+        cartao:['Cartão','b-cartao'],
+      };
+      const [label, cls] = map[type] || ['Item',''];
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+
+    function isMonthWithinRange(month, start, end){
+      if (!start) return false;
+      if (month < start) return false;
+      if (end && month > end) return false;
+      return true;
+    }
+
+    function addMonths(monthValue, amount){
+      const [y,m] = monthValue.split('-').map(Number);
+      const date = new Date(y, m - 1 + amount, 1);
+      return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+    }
+
+    function setDayInMonth(monthValue, day){
+      const [y,m] = monthValue.split('-').map(Number);
+      const d = Math.max(1, Math.min(day || 1, 28));
+      return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    }
+
+    function dayFromDate(dateStr){ return Number((dateStr || '').split('-')[2] || 1); }
+    function toMonthValue(date){
+      const d = typeof date === 'string' ? new Date(date) : date;
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    }
+    function toDateValue(date){
+      const d = typeof date === 'string' ? new Date(date) : date;
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+    function formatCurrency(value){
+      return new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(value || 0));
+    }
+    function formatDateBR(dateStr){
+      const [y,m,d] = dateStr.split('-');
+      return `${d}/${m}/${y}`;
+    }
+    function formatMonthLabel(monthValue){
+      const [y,m] = monthValue.split('-').map(Number);
+      return new Date(y, m - 1, 1).toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
+    }
+    function round2(n){ return Math.round((Number(n) + Number.EPSILON) * 100) / 100; }
+    function cryptoRandom(){ return 'id_' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+    function escapeHtml(str){
+      return String(str ?? '').replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
+    }
+
+    window.removeItem = removeItem;
+    window.deleteGoal = deleteGoal;
+  </script>
+</body>
+</html>
