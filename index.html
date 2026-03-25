@@ -817,7 +817,7 @@
           <td>${escapeHtml(item.category)}</td>
           <td>${formatCurrency(item.value)}</td>
           <td>${escapeHtml(item.obs || '-')}</td>
-          <td><button class="btn btn-soft btn-danger" onclick="removeItem('${item.collection}','${item.id}',${item.index ?? -1})">Excluir</button></td>
+          <td><button type="button" class="btn btn-soft btn-danger js-delete-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Excluir</button></td>
         </tr>
       `).join('');
     }
@@ -843,7 +843,7 @@
           <td>${formatCurrency(item.value)}</td>
           <td>${escapeHtml(item.payment || '-')}</td>
           <td>${escapeHtml(item.obs || '-')}</td>
-          <td><button class="btn btn-soft" onclick="removeItem('${item.collection}','${item.id}',${item.index ?? -1})">Excluir</button></td>
+          <td><button type="button" class="btn btn-soft btn-danger js-delete-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Excluir</button></td>
         </tr>
       `).join('');
     }
@@ -1468,18 +1468,36 @@
     }
 
     function removeItem(collection, id, index){
+      deleteLaunch(collection, id);
+    }
+
+    function deleteLaunch(collection, id){
       if (!confirm('Deseja excluir este item?')) return;
+
+      const beforeEntries = state.entries.length;
+      const beforeFixed = state.fixedEntries.length;
+      const beforeCards = state.cardPurchases.length;
+
       if (collection === 'entries') {
-        state.entries = state.entries.filter(item => item.id !== id);
+        state.entries = state.entries.filter(item => String(item.id) !== String(id));
       } else if (collection === 'fixedEntries') {
-        const actualId = id.split('_')[0];
-        state.fixedEntries = state.fixedEntries.filter(item => item.id !== actualId);
+        const actualId = String(id).split('_')[0];
+        state.fixedEntries = state.fixedEntries.filter(item => String(item.id) !== actualId);
       } else if (collection === 'cardPurchases') {
-        const actualId = id.includes('_') ? id.split('_')[0] : id;
-        state.cardPurchases = state.cardPurchases.filter(item => item.id !== actualId);
+        const actualId = String(id).includes('_') ? String(id).split('_')[0] : String(id);
+        state.cardPurchases = state.cardPurchases.filter(item => String(item.id) !== actualId);
       }
+
+      const changed = beforeEntries !== state.entries.length || beforeFixed !== state.fixedEntries.length || beforeCards !== state.cardPurchases.length;
+
+      if (!changed) {
+        alert('Não consegui localizar esse lançamento para excluir. Atualize a página e tente novamente.');
+        return;
+      }
+
       saveState();
       renderAll();
+      updateSyncStatus('Lançamento excluído com sucesso.');
     }
 
     function deleteGoal(goalId){
@@ -1564,7 +1582,17 @@
       return String(str ?? '').replace(/[&<>"]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s]));
     }
 
+
+    document.addEventListener('click', (event) => {
+      const btn = event.target.closest('.js-delete-item');
+      if (!btn) return;
+      const collection = btn.getAttribute('data-collection');
+      const id = btn.getAttribute('data-id');
+      deleteLaunch(collection, id);
+    });
+
     window.removeItem = removeItem;
+    window.deleteLaunch = deleteLaunch;
     window.deleteGoal = deleteGoal;
   </script>
 </body>
