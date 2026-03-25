@@ -817,7 +817,10 @@
           <td>${escapeHtml(item.category)}</td>
           <td>${formatCurrency(item.value)}</td>
           <td>${escapeHtml(item.obs || '-')}</td>
-          <td><button type="button" class="btn btn-soft btn-danger js-delete-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Excluir</button></td>
+          <td style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn btn-soft js-edit-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Editar</button>
+            <button type="button" class="btn btn-soft btn-danger js-delete-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Excluir</button>
+          </td>
         </tr>
       `).join('');
     }
@@ -843,7 +846,10 @@
           <td>${formatCurrency(item.value)}</td>
           <td>${escapeHtml(item.payment || '-')}</td>
           <td>${escapeHtml(item.obs || '-')}</td>
-          <td><button type="button" class="btn btn-soft btn-danger js-delete-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Excluir</button></td>
+          <td style="display:flex;gap:8px;flex-wrap:wrap">
+            <button type="button" class="btn btn-soft js-edit-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Editar</button>
+            <button type="button" class="btn btn-soft btn-danger js-delete-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Excluir</button>
+          </td>
         </tr>
       `).join('');
     }
@@ -1471,6 +1477,101 @@
       deleteLaunch(collection, id);
     }
 
+    function findSourceItem(collection, id){
+      if (collection === 'entries') {
+        return state.entries.find(item => String(item.id) === String(id)) || null;
+      }
+      if (collection === 'fixedEntries') {
+        const actualId = String(id).split('_')[0];
+        return state.fixedEntries.find(item => String(item.id) === actualId) || null;
+      }
+      if (collection === 'cardPurchases') {
+        const actualId = String(id).includes('_') ? String(id).split('_')[0] : String(id);
+        return state.cardPurchases.find(item => String(item.id) === actualId) || null;
+      }
+      return null;
+    }
+
+    function editLaunch(collection, id){
+      const item = findSourceItem(collection, id);
+      if (!item) {
+        alert('Não consegui localizar esse lançamento para editar. Atualize a página e tente novamente.');
+        return;
+      }
+
+      const newDate = prompt('Data do lançamento (AAAA-MM-DD):', item.date || toDateValue(new Date()));
+      if (newDate === null) return;
+
+      const newDescription = prompt('Descrição:', item.description || '');
+      if (newDescription === null) return;
+
+      const newCategory = prompt('Categoria:', item.category || '');
+      if (newCategory === null) return;
+
+      const valueLabel = collection === 'cardPurchases' ? 'Valor total da compra:' : 'Valor:';
+      const currentValue = collection === 'cardPurchases' ? Number(item.amount || 0) : Number(item.amount || 0);
+      const newValueRaw = prompt(valueLabel, String(currentValue).replace('.', ','));
+      if (newValueRaw === null) return;
+      const parsedValue = Number(String(newValueRaw).replace(/\./g,'').replace(',', '.'));
+      if (!parsedValue || parsedValue <= 0) {
+        alert('Informe um valor válido.');
+        return;
+      }
+
+      const newObs = prompt('Observação:', item.obs || '');
+      if (newObs === null) return;
+
+      item.date = newDate;
+      item.description = newDescription.trim();
+      item.category = newCategory.trim();
+      item.amount = parsedValue;
+      item.obs = newObs.trim();
+
+      if (!item.description || !item.category || !item.date) {
+        alert('Os campos obrigatórios não podem ficar vazios.');
+        return;
+      }
+
+      if (collection === 'entries') {
+        const newPayment = prompt('Forma de pagamento (pix, dinheiro, debito, cartao_credito, boleto, transferencia):', item.payment || 'pix');
+        if (newPayment === null) return;
+        item.payment = newPayment.trim() || item.payment;
+      }
+
+      if (collection === 'fixedEntries') {
+        const newStart = prompt('Mês inicial da recorrência (AAAA-MM):', item.startMonth || toMonthValue(new Date()));
+        if (newStart === null) return;
+        const newEnd = prompt('Mês final da recorrência (AAAA-MM) ou deixe vazio:', item.endMonth || '');
+        if (newEnd === null) return;
+        item.startMonth = newStart.trim();
+        item.endMonth = newEnd.trim();
+      }
+
+      if (collection === 'cardPurchases') {
+        const newInstallmentsRaw = prompt('Quantidade de parcelas:', String(item.installments || 2));
+        if (newInstallmentsRaw === null) return;
+        const newInstallments = Number(newInstallmentsRaw);
+        if (!newInstallments || newInstallments < 2) {
+          alert('Informe pelo menos 2 parcelas.');
+          return;
+        }
+        const newCardName = prompt('Nome do cartão:', item.cardName || 'Cartão');
+        if (newCardName === null) return;
+        const newDueDayRaw = prompt('Dia do vencimento da parcela:', String(item.dueDay || 10));
+        if (newDueDayRaw === null) return;
+        const newDueDay = Number(newDueDayRaw);
+
+        item.installments = newInstallments;
+        item.cardName = newCardName.trim() || 'Cartão';
+        item.dueDay = newDueDay || 10;
+        item.installmentValue = round2(parsedValue / newInstallments);
+      }
+
+      saveState();
+      renderAll();
+      updateSyncStatus('Lançamento editado com sucesso.');
+    }
+
     function deleteLaunch(collection, id){
       if (!confirm('Deseja excluir este item?')) return;
 
@@ -1584,6 +1685,14 @@
 
 
     document.addEventListener('click', (event) => {
+      const editBtn = event.target.closest('.js-edit-item');
+      if (editBtn) {
+        const collection = editBtn.getAttribute('data-collection');
+        const id = editBtn.getAttribute('data-id');
+        editLaunch(collection, id);
+        return;
+      }
+
       const btn = event.target.closest('.js-delete-item');
       if (!btn) return;
       const collection = btn.getAttribute('data-collection');
@@ -1592,6 +1701,7 @@
     });
 
     window.removeItem = removeItem;
+    window.editLaunch = editLaunch;
     window.deleteLaunch = deleteLaunch;
     window.deleteGoal = deleteGoal;
   </script>
