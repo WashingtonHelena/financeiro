@@ -818,8 +818,8 @@
           <td>${formatCurrency(item.value)}</td>
           <td>${escapeHtml(item.obs || '-')}</td>
           <td style="display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="btn btn-soft js-edit-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Editar</button>
-            <button type="button" class="btn btn-soft btn-danger js-delete-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Excluir</button>
+            <button type="button" class="btn btn-soft js-edit-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}" data-index="${Number.isInteger(item.index) ? item.index : ''}">Editar</button>
+            <button type="button" class="btn btn-soft btn-danger js-delete-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}" data-index="${Number.isInteger(item.index) ? item.index : ''}">Excluir</button>
           </td>
         </tr>
       `).join('');
@@ -847,8 +847,8 @@
           <td>${escapeHtml(item.payment || '-')}</td>
           <td>${escapeHtml(item.obs || '-')}</td>
           <td style="display:flex;gap:8px;flex-wrap:wrap">
-            <button type="button" class="btn btn-soft js-edit-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Editar</button>
-            <button type="button" class="btn btn-soft btn-danger js-delete-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}">Excluir</button>
+            <button type="button" class="btn btn-soft js-edit-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}" data-index="${Number.isInteger(item.index) ? item.index : ''}">Editar</button>
+            <button type="button" class="btn btn-soft btn-danger js-delete-item" data-collection="${escapeHtml(item.collection)}" data-id="${escapeHtml(item.id)}" data-index="${Number.isInteger(item.index) ? item.index : ''}">Excluir</button>
           </td>
         </tr>
       `).join('');
@@ -1474,26 +1474,38 @@
     }
 
     function removeItem(collection, id, index){
-      deleteLaunch(collection, id);
+      deleteLaunch(collection, id, index);
     }
 
-    function findSourceItem(collection, id){
-      if (collection === 'entries') {
-        return state.entries.find(item => String(item.id) === String(id)) || null;
-      }
-      if (collection === 'fixedEntries') {
-        const actualId = String(id).split('_')[0];
-        return state.fixedEntries.find(item => String(item.id) === actualId) || null;
-      }
-      if (collection === 'cardPurchases') {
-        const actualId = String(id).includes('_') ? String(id).split('_')[0] : String(id);
-        return state.cardPurchases.find(item => String(item.id) === actualId) || null;
-      }
+    function getCollectionArray(collection){
+      if (collection === 'entries') return state.entries;
+      if (collection === 'fixedEntries') return state.fixedEntries;
+      if (collection === 'cardPurchases') return state.cardPurchases;
       return null;
     }
 
-    function editLaunch(collection, id){
-      const item = findSourceItem(collection, id);
+    function normalizeSourceId(collection, id){
+      const raw = String(id ?? '');
+      if (collection === 'fixedEntries') return raw.split('_')[0];
+      if (collection === 'cardPurchases') return raw.includes('_') ? raw.split('_')[0] : raw;
+      return raw;
+    }
+
+    function findSourceItem(collection, id, index){
+      const arr = getCollectionArray(collection);
+      if (!arr) return null;
+
+      const numericIndex = Number(index);
+      if (Number.isInteger(numericIndex) && numericIndex >= 0 && numericIndex < arr.length) {
+        return arr[numericIndex];
+      }
+
+      const normalizedId = normalizeSourceId(collection, id);
+      return arr.find(item => String(item.id) === normalizedId) || null;
+    }
+
+    function editLaunch(collection, id, index){
+      const item = findSourceItem(collection, id, index);
       if (!item) {
         alert('Não consegui localizar esse lançamento para editar. Atualize a página e tente novamente.');
         return;
@@ -1572,21 +1584,31 @@
       updateSyncStatus('Lançamento editado com sucesso.');
     }
 
-    function deleteLaunch(collection, id){
+    function deleteLaunch(collection, id, index){
       if (!confirm('Deseja excluir este item?')) return;
+
+      const arr = getCollectionArray(collection);
+      if (!arr) {
+        alert('Coleção inválida para exclusão.');
+        return;
+      }
 
       const beforeEntries = state.entries.length;
       const beforeFixed = state.fixedEntries.length;
       const beforeCards = state.cardPurchases.length;
 
-      if (collection === 'entries') {
-        state.entries = state.entries.filter(item => String(item.id) !== String(id));
-      } else if (collection === 'fixedEntries') {
-        const actualId = String(id).split('_')[0];
-        state.fixedEntries = state.fixedEntries.filter(item => String(item.id) !== actualId);
-      } else if (collection === 'cardPurchases') {
-        const actualId = String(id).includes('_') ? String(id).split('_')[0] : String(id);
-        state.cardPurchases = state.cardPurchases.filter(item => String(item.id) !== actualId);
+      const numericIndex = Number(index);
+      if (Number.isInteger(numericIndex) && numericIndex >= 0 && numericIndex < arr.length) {
+        arr.splice(numericIndex, 1);
+      } else {
+        const actualId = normalizeSourceId(collection, id);
+        if (collection === 'entries') {
+          state.entries = state.entries.filter(item => String(item.id) !== actualId);
+        } else if (collection === 'fixedEntries') {
+          state.fixedEntries = state.fixedEntries.filter(item => String(item.id) !== actualId);
+        } else if (collection === 'cardPurchases') {
+          state.cardPurchases = state.cardPurchases.filter(item => String(item.id) !== actualId);
+        }
       }
 
       const changed = beforeEntries !== state.entries.length || beforeFixed !== state.fixedEntries.length || beforeCards !== state.cardPurchases.length;
@@ -1689,7 +1711,8 @@
       if (editBtn) {
         const collection = editBtn.getAttribute('data-collection');
         const id = editBtn.getAttribute('data-id');
-        editLaunch(collection, id);
+        const index = editBtn.getAttribute('data-index');
+        editLaunch(collection, id, index);
         return;
       }
 
@@ -1697,7 +1720,8 @@
       if (!btn) return;
       const collection = btn.getAttribute('data-collection');
       const id = btn.getAttribute('data-id');
-      deleteLaunch(collection, id);
+      const index = btn.getAttribute('data-index');
+      deleteLaunch(collection, id, index);
     });
 
     window.removeItem = removeItem;
