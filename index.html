@@ -523,6 +523,7 @@
 
   <script>
     const STORAGE_KEY = 'financeiro_pro_v1';
+    const CLOUD_BOOT_KEY = 'financeiro_pro_cloud_boot';
 
     const state = loadState();
 
@@ -613,6 +614,7 @@
       bindEvents();
       updateModeUI();
       renderAll();
+      tryAutoCloudBootstrap();
     }
 
     function bindEvents(){
@@ -1239,11 +1241,19 @@
 
     function saveCloudConfig(){
       state.cloud = state.cloud || { scriptUrl:'', autoSync:false, lastSyncAt:'' };
-      state.cloud.scriptUrl = (els.cloudScriptUrl.value || '').trim();
+      state.cloud.scriptUrl = normalizeScriptUrl((els.cloudScriptUrl.value || '').trim());
       state.cloud.autoSync = Boolean(els.autoSyncCheck.checked);
+      els.cloudScriptUrl.value = state.cloud.scriptUrl;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      updateSyncStatus(state.cloud.scriptUrl ? 'URL salva. Use “Carregar da nuvem” ou “Sincronizar agora”.' : 'URL removida. O sistema continuará salvando localmente.');
-      alert(state.cloud.scriptUrl ? 'URL do Apps Script salva.' : 'URL removida.');
+      sessionStorage.removeItem(CLOUD_BOOT_KEY);
+      if (!state.cloud.scriptUrl) {
+        updateSyncStatus('URL removida. O sistema continuará salvando localmente.');
+        alert('URL removida.');
+        return;
+      }
+      updateSyncStatus(state.cloud.autoSync ? 'URL salva. O sistema vai tentar carregar da nuvem automaticamente.' : 'URL salva. Use “Carregar da nuvem” ou “Sincronizar agora”.');
+      alert(state.cloud.autoSync ? 'URL salva. A sincronização automática foi ativada.' : 'URL do Apps Script salva.');
+      if (state.cloud.autoSync) loadCloudState(false, false);
     }
 
     function queueAutoSync(){
@@ -1253,7 +1263,7 @@
     }
 
     function syncCloudNow(showAlert = true){
-      const url = (state.cloud?.scriptUrl || '').trim();
+      const url = normalizeScriptUrl((state.cloud?.scriptUrl || '').trim());
       if (!url) {
         if (showAlert) alert('Cole primeiro a URL do Web App do Apps Script.');
         return;
@@ -1276,41 +1286,122 @@
       }
     }
 
-    function loadCloudState(showAlert = false){
-      const url = (state.cloud?.scriptUrl || '').trim();
+    function loadCloudState(showAlert = false, reloadPage = false){
+      const url = normalizeScriptUrl((state.cloud?.scriptUrl || '').trim());
       if (!url) {
         alert('Cole primeiro a URL do Web App do Apps Script.');
         return;
       }
+      if (!isLikelyAppsScriptExecUrl(url)) {
+        const msg = 'A URL parece inválida. Use a URL final do Apps Script publicada como Web App, terminando com /exec.';
+        updateSyncStatus(msg);
+        if (showAlert) alert(msg);
+        return;
+      }
       updateSyncStatus('Carregando dados da nuvem...');
-      const callbackName = '__financeiroCloudCallback';
+      const callbackName = '__financeiroCloudCallback_' + Date.now();
+      const script = document.createElement('script');
+      let finished = false;
+
+      const cleanup = () => {
+        if (script.parentNode) script.parentNode.removeChild(script);
+        try { delete window[callbackName]; } catch {}
+      };
+
+      const timeoutId = setTimeout(() => {
+        if (finished) return;
+        finished = true;
+        cleanup();
+        const msg = 'Não foi possível carregar da nuvem. Confira se o Apps Script foi implantado como Web App, com acesso “Qualquer pessoa”, e use a URL /exec.';
+        updateSyncStatus(msg);
+        if (showAlert) alert(msg);
+      }, 12000);
+
       window[callbackName] = function(response){
+        if (finished) return;
+        finished = true;
+        clearTimeout(timeoutId);
+        cleanup();
         try {
           if (!response || response.ok === false) throw new Error(response?.message || 'Resposta inválida');
           const incoming = response.state;
           if (!incoming || typeof incoming !== 'object') throw new Error('Nenhum dado encontrado na nuvem.');
-          incoming.cloud = incoming.cloud || {};
-          incoming.cloud.scriptUrl = state.cloud.scriptUrl;
-          incoming.cloud.autoSync = state.cloud.autoSync;
-          incoming.cloud.lastSyncAt = new Date().toISOString();
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(incoming));
-          updateSyncStatus(`Última sincronização: ${formatDateTimeBR(incoming.cloud.lastSyncAt)}`);
+          applyIncomingState(incoming);
+          state.cloud.lastSyncAt = new Date().toISOString();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          updateCloudFields();
+          renderAll();
+          updateSyncStatus(`Última sincronização: ${formatDateTimeBR(state.cloud.lastSyncAt)}`);
           if (showAlert) alert('Dados carregados da nuvem com sucesso.');
-          location.reload();
+          if (reloadPage) location.reload();
         } catch (error) {
           console.error(error);
-          updateSyncStatus('Falha ao carregar da nuvem.');
+          updateSyncStatus(error.message || 'Falha ao carregar da nuvem.');
           if (showAlert) alert(error.message || 'Não foi possível carregar da nuvem.');
         }
       };
 
-      const script = document.createElement('script');
       script.src = `${url}${url.includes('?') ? '&' : '?'}action=getState&callback=${callbackName}&_=${Date.now()}`;
       script.onerror = () => {
-        updateSyncStatus('Falha ao carregar da nuvem.');
-        if (showAlert) alert('Não foi possível carregar da nuvem.');
+        if (finished) return;
+        finished = true;
+        clearTimeout(timeoutId);
+        cleanup();
+        const msg = 'Falha ao acessar o Apps Script. Verifique se a URL está correta e publicada.';
+        updateSyncStatus(msg);
+        if (showAlert) alert(msg);
       };
       document.body.appendChild(script);
+    }
+
+
+    function tryAutoCloudBootstrap(){
+      const url = normalizeScriptUrl((state.cloud?.scriptUrl || '').trim());
+      if (!url || !state.cloud?.autoSync) return;
+      const lastBoot = sessionStorage.getItem(CLOUD_BOOT_KEY);
+      if (lastBoot === url) return;
+      sessionStorage.setItem(CLOUD_BOOT_KEY, url);
+      setTimeout(() => loadCloudState(false, false), 600);
+    }
+
+    function applyIncomingState(incoming){
+      const normalized = normalizeIncomingState(incoming);
+      const cloudConfig = { ...(state.cloud || {}) };
+      Object.keys(state).forEach(key => delete state[key]);
+      Object.assign(state, normalized);
+      state.cloud = state.cloud || {};
+      state.cloud.scriptUrl = cloudConfig.scriptUrl || state.cloud.scriptUrl || '';
+      state.cloud.autoSync = typeof cloudConfig.autoSync === 'boolean' ? cloudConfig.autoSync : Boolean(state.cloud.autoSync);
+      state.cloud.lastSyncAt = new Date().toISOString();
+    }
+
+    function normalizeIncomingState(data){
+      const parsed = (data && typeof data === 'object') ? data : {};
+      parsed.selectedMonth = parsed.selectedMonth || toMonthValue(new Date());
+      parsed.monthlyIncome = Number(parsed.monthlyIncome || 0);
+      parsed.entries = Array.isArray(parsed.entries) ? parsed.entries : [];
+      parsed.fixedEntries = Array.isArray(parsed.fixedEntries) ? parsed.fixedEntries : [];
+      parsed.cardPurchases = Array.isArray(parsed.cardPurchases) ? parsed.cardPurchases : [];
+      parsed.goals = Array.isArray(parsed.goals) ? parsed.goals : [];
+      parsed.goalContributions = Array.isArray(parsed.goalContributions) ? parsed.goalContributions : [];
+      parsed.cloud = parsed.cloud || { scriptUrl:'', autoSync:false, lastSyncAt:'' };
+      return parsed;
+    }
+
+    function updateCloudFields(){
+      if (els.cloudScriptUrl) els.cloudScriptUrl.value = state.cloud?.scriptUrl || '';
+      if (els.autoSyncCheck) els.autoSyncCheck.checked = Boolean(state.cloud?.autoSync);
+      if (els.dashboardMonth && state.selectedMonth) els.dashboardMonth.value = state.selectedMonth;
+      if (els.filterMonth && state.selectedMonth) els.filterMonth.value = state.selectedMonth;
+      if (els.monthlyIncomeInput) els.monthlyIncomeInput.value = state.monthlyIncome || '';
+    }
+
+    function normalizeScriptUrl(url){
+      return String(url || '').trim().replace(/\/$/, '');
+    }
+
+    function isLikelyAppsScriptExecUrl(url){
+      return /script\.google\.com\/macros\/s\/.+\/exec(?:\?.*)?$/i.test(url);
     }
 
     function postToCloud(url, payload){
