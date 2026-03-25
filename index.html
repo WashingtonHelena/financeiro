@@ -215,7 +215,12 @@
               <div class="filters">
                 <div class="field">
                   <label>Mês</label>
-                  <input type="month" id="dashboardMonth">
+                  <div class="month-nav">
+                    <button type="button" class="btn btn-soft btn-sm" id="prevDashboardMonth">◀</button>
+                    <input type="month" id="dashboardMonth">
+                    <button type="button" class="btn btn-soft btn-sm" id="nextDashboardMonth">▶</button>
+                    <button type="button" class="btn btn-soft btn-sm" id="currentDashboardMonth">Hoje</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -256,6 +261,7 @@
                   <th>Categoria</th>
                   <th>Valor</th>
                   <th>Obs.</th>
+                  <th>Ação</th>
                 </tr>
               </thead>
               <tbody id="recentTable"></tbody>
@@ -539,6 +545,9 @@
       entryForm: document.getElementById('entryForm'),
       entryTypeSwitch: document.getElementById('entryTypeSwitch'),
       dashboardMonth: document.getElementById('dashboardMonth'),
+      prevDashboardMonth: document.getElementById('prevDashboardMonth'),
+      nextDashboardMonth: document.getElementById('nextDashboardMonth'),
+      currentDashboardMonth: document.getElementById('currentDashboardMonth'),
       filterMonth: document.getElementById('filterMonth'),
       filterType: document.getElementById('filterType'),
       monthsAhead: document.getElementById('monthsAhead'),
@@ -633,6 +642,15 @@
       });
       els.entryForm.addEventListener('submit', handleFormSubmit);
       els.dashboardMonth.addEventListener('change', () => { state.selectedMonth = els.dashboardMonth.value; saveState(); renderAll(); });
+      els.prevDashboardMonth.addEventListener('click', () => shiftDashboardMonth(-1));
+      els.nextDashboardMonth.addEventListener('click', () => shiftDashboardMonth(1));
+      els.currentDashboardMonth.addEventListener('click', () => {
+        const current = toMonthValue(new Date());
+        els.dashboardMonth.value = current;
+        state.selectedMonth = current;
+        saveState();
+        renderAll();
+      });
       els.filterMonth.addEventListener('change', renderHistory);
       els.filterType.addEventListener('change', renderHistory);
       els.monthsAhead.addEventListener('change', renderProjections);
@@ -645,6 +663,15 @@
       els.saveCloudConfigBtn.addEventListener('click', saveCloudConfig);
       els.syncNowBtn.addEventListener('click', syncCloudNow);
       els.loadCloudBtn.addEventListener('click', () => loadCloudState(true));
+    }
+
+    function shiftDashboardMonth(step){
+      const current = els.dashboardMonth.value || state.selectedMonth || toMonthValue(new Date());
+      const targetMonth = addMonths(current, step);
+      els.dashboardMonth.value = targetMonth;
+      state.selectedMonth = targetMonth;
+      saveState();
+      renderAll();
     }
 
     function switchSection(target){
@@ -779,7 +806,7 @@
     function renderRecent(){
       const items = getUnifiedTimeline().slice(0, 8);
       if (!items.length) {
-        els.recentTable.innerHTML = `<tr><td colspan="6" class="empty">Nenhum lançamento ainda.</td></tr>`;
+        els.recentTable.innerHTML = `<tr><td colspan="7" class="empty">Nenhum lançamento ainda.</td></tr>`;
         return;
       }
       els.recentTable.innerHTML = items.map(item => `
@@ -790,6 +817,7 @@
           <td>${escapeHtml(item.category)}</td>
           <td>${formatCurrency(item.value)}</td>
           <td>${escapeHtml(item.obs || '-')}</td>
+          <td><button class="btn btn-soft btn-danger" onclick="removeItem('${item.collection}','${item.id}',${item.index ?? -1})">Excluir</button></td>
         </tr>
       `).join('');
     }
